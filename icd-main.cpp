@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <cstdio>
 #include <cstring>
+#include <unistd.h>
 
 #include "inotify-cxx.h"
 #include "appinst.h"

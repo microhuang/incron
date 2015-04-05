@@ -16,8 +16,10 @@
 #ifndef _USERTABLE_H_
 #define _USERTABLE_H_
 
+#include <vector>
 #include <map>
 #include <deque>
+#include <string>
 #include <sys/poll.h>
 
 #include "inotify-cxx.h"
@@ -31,6 +33,9 @@ typedef std::map<std::string, UserTable*> SUT_MAP;
 
 /// Callback for calling after a process finishes.
 typedef void (*proc_done_cb)(InotifyWatch*);
+
+/// A list of strings, to hold filesystem paths
+typedef std::vector<std::string> TPathList;
 
 /// Child process data
 typedef struct
@@ -145,10 +150,10 @@ public:
    * \param[in] rUser user name
    * \param[in] fSysTable system table yes/no
    */
-	UserTable(EventDispatcher* pEd, const std::string& rUser, bool fSysTable);
+  UserTable(EventDispatcher* pEd, const std::string& rUser, bool fSysTable);
   
   /// Destructor.
-	virtual ~UserTable();
+  virtual ~UserTable();
   
   /// Loads the table.
   /**
@@ -261,7 +266,40 @@ private:
    * \param[in] argv argument array
    */
   void CleanupArgs(int argc, char** argv);
-  
+
+  /// Add a single watch on a directory
+  /**
+   * \param[in] sPath path to watch
+   * \param[in] pEntry incrontab entry
+   */
+  void AddWatch(const std::string& sPath, IncronTabEntry* pEntry);
+
+  /// Removes a single watch on a directory
+  /**
+   * \param[in] sPath path to stop watching
+   */
+  void RemoveWatch(const std::string& sPath);
+
+  // Recursively search for all directories under sPath
+  /**
+   * \param[in] sPath path to start searching from
+   * \param[out] rResults a vector with all directories
+   */
+  static void GetDirectoryTree(const std::string& sPath, TPathList& rResults);
+
+  /// Returns true if given sPath is a directory, false otherwise
+  /**
+   * \param[in] sPath path to inspect
+   */
+  static bool IsDirectory(const std::string& sPath);
+
+  /// Handle directory events, to maintain watches on all directories
+  /**
+   * \param[in] rEvt inotify event
+   * \param[in] pWatch corresponding watch
+   * \param[in] pEntry corresponding incrontab entry
+   */
+  void OnEventDirectory(const InotifyEvent& rEvt, InotifyWatch* pWatch, IncronTabEntry* pIncronTabEntry);
 };
 
 #endif //_USERTABLE_H_
